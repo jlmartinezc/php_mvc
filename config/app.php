@@ -9,10 +9,10 @@ return [
     'app' => [
         'name' => ''
     ],
-    'url' => [
-        'base' =>$url
-    ],
     'path' => [
         'root' => $root
+    ],
+    'url' => [
+        'base' => $url
     ]
 ];

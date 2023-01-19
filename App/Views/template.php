@@ -1,17 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <?php include(sprintf('%s/partials/head.php', dirname(__FILE__, 1))) ?>
+    <?php require_once './partials/head.php' ?>
 </head>
 <body>
-    <?php include(sprintf('%s/partials/header.php', dirname(__FILE__, 1))) ?>
+    <?php require_once './partials/header.php' ?>
 
     <main>
         <?php require_once $content ?>
     </main>
 
-    <?php include(sprintf('%s/partials/footer.php', dirname(__FILE__, 1))) ?>
-    <?php include(sprintf('%s/partials/scripts.php', dirname(__FILE__, 1))) ?>
-        
+    <?php require_once './partials/footer.php' ?>
+    <?php require_once './partials/scripts.php' ?>
 </body>
 </html>

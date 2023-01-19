@@ -1,14 +1,13 @@
 <?php 
+declare(strict_types = 1);
 
 namespace src\Autoloader;
 
-class Autoloader{
-
-    private Array $config = [];
+class Autoloader {
+    protected Array $config;
 
     public function __construct(){
-        $config = sprintf('%s/config/app.php', dirname(__FILE__, 3));
-        $this->config = include($config);
+        $this->config = include_once '../config/app.php';
     }
 
     /**
@@ -25,17 +24,14 @@ class Autoloader{
      */
     public function loader(String $class):Void{
         try {
-            (empty($this->config) || is_null($this->config)) 
-            ? throw new \Exception("Datos de configuración no han sido encontrados", 404) : '';
-            
             $class = trim($class, '/');
             $root = $this->config['path']['root'];
             $file = sprintf('%s/%s.php', $root, $class);
 
             (is_file($file))
-            ? require_once($file)
-            : throw new \Exception(sprintf("No se ha encontradp eñ archivo '%s.php'", $class), 404);
-                        
+            ? require_once $file
+            : throw new \Exception(sprintf("No se ha encontrado la clase '%s'", $class), 404);
+
         } catch (\Exception $error) {
             echo $error->getMessage();
             die();

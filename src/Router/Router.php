@@ -1,47 +1,34 @@
 <?php 
+declare(strict_types = 1);
 
 namespace src\Router;
 
 class Router{
 
-    private $routePath = null;
     protected Array $routes = [];
     protected Array $params = [];
-    protected Array|null $route = null;
-
+    protected Array $matches = [];
+    protected Array|Null $route = null;
 
     public function __construct(){
-        $routes = sprintf('%s/routes/routes.php', dirname(__FILE__, 3));
-
-        (!is_file($routes))? throw new \Exception("No hay rutas definidas") : '';
-
-        $this->routes = include($routes);
+        $this->routes = include_once '../routes/routes.php';
     }
 
     /**
      * @return Void
      */
     public function dispatch():Void{
-        try {
-            $url = $_SERVER['PHP_SELF'];
-            $method = $_SERVER['REQUEST_METHOD'];
-            
-            if($url === '') $url = '/';
+        $url = $_GET['url'];
+        $method = $_SERVER['REQUEST_METHOD'];
 
-            $this->route = $this->checkRoute($url, $method);
+        $this->route = $this->checkRoute($url, $method);
+        
+        ($this->route === null) ? throw new \Exception("No se ha encontrado la ruta", 404) : '';
 
-            if($this->route === null) throw new \Exception("No hay ruta coincidente", 400);
-            
-            $this->params = $this->extractUrlParams($url);
-
-            $this->runRoute();
-
-        } catch (\Exception $error) {
-            echo $error->getMessage();
-            die();
-        }
+        $this->run();
+        
     }
-
+    
     /**
      * @param String $url
      * @param String $method
@@ -50,14 +37,17 @@ class Router{
      */
     private function checkRoute(String $url, String $method):?Array{
         try {
-            foreach ($this->routes[$method] as $path => $routes) {
-                if(strpos($url, $path) === 0){
-                    $this->routePath = $path;
-                    return $this->decodeController($routes);
-                }
+            foreach($this->routes[$method] as $path => $route){
+                
+                $controller = ($this->match($url, $path))
+                ? $this->decodeControllers($route)
+                : null;
+                
+                return $controller;
             }
 
             return null;
+
         } catch (\Exception $error) {
             echo $error->getMessage();
             die();
@@ -65,41 +55,37 @@ class Router{
     }
 
     /**
-     * @param String $routes
+     * @param String $route
      * 
      * @return Array
      */
-    private function decodeController(String $route):Array{
+    private function decodeControllers(String $route):Array{
         $route = explode('@', $route);
 
         return [
             'controller' => sprintf('App\\Controllers\\%sController', $route[0]),
-            'action' => $route[1]
+            'method' => $route[1]
         ];
     }
 
     /**
      * @param String $url
+     * @param String $path
      * 
-     * @return Array
+     * @return Bool
      */
-    private function extractUrlParams(String $url):Array{
+    private function match(String $url, String $path):Bool{
         try {
-            $params_string = str_replace($this->routePath, '', $url);
+            $url = trim($url, '/');
+            $path = trim($path, '/');
+            $routePath = preg_replace_callback('#:([\w]+)#', [$this, 'paramsMatch'], $path);
+            $regex = "#^$routePath$#i";
 
-            if(substr($params_string, 0, 1) === '/') $params_string = substr($params_string, 1);
+            if(!preg_match($regex, $url, $matches)) return false;
 
-            $params = [];
-            $arr = explode('/', $params_string);
-
-            $arr = explode("/", $params_string);
-
-            for ($index = 0; $index < count($arr); $index++) {
-                $params[$arr[$index]] = (isset($arr[$index + 1])) ? $arr[$index + 1] : null;
-
-                $index++;
-            }
-            return $params;
+            array_shift($matches);
+            $this->params = $matches;
+            return true;
 
         } catch (\Exception $error) {
             echo $error->getMessage();
@@ -108,42 +94,51 @@ class Router{
     }
 
     /**
+     * @param Array $match
+     * 
+     * @return String
+     */
+    private function paramsMatch(Array $match):String{
+        return (isset($this->matches[$match[1]]))
+        ? sprintf('(%s)', $this->matches[$match[1]])
+        : '([^/]+)';
+    }
+
+    /**
      * @return Void
      */
-    private function runRoute():Void{
+    private function run():Void{
         try {
             if(class_exists($this->route['controller'])){
                 $controllerObject = new $this->route['controller']();
-
                 $this->methodExist($controllerObject);
             } else{
-                throw new \Exception(sprintf("El controlador '%s' no ha sido encontrado", $this->route['controller']));
+                throw new \Exception(sprintf("El controlador '%s' no ha sido encontrado", $this->route['controller']), 404);                
             }
 
-        } catch (\Exception $error) {
+        } catch (\exception $error) {
             echo $error->getMessage();
             die();
         }
     }
 
-
     /**
-     * @param Object $controller
+     * @param Object $controllerObject
      * 
      * @return Void
      */
-    private function methodExist(Object $controller):Void{
+    private function methodExist(Object $controllerObject):Void{
         try {
-            if(method_exists($controller, $this->route['action'])){
-                (is_callable([$controller, $this->route['action']]))
-                ? call_user_func_array([$controller, $this->route['action']], [])
+            if(method_exists($controllerObject, $this->route['method'])){
+                
+                (is_callable([$controllerObject, $this->route['method']]))
+                ? call_user_func_array([$controllerObject, $this->route['method']], $this->params)
                 : throw new \Exception(sprintf("Metodo '%s' en el controlador '%s' no es ejecutable", $this->route['action'], $this->route['controller']));
-
-            } else{
-                throw new \Exception(sprintf("El metodo '%s' no ha sido definido", $this->route['action']));
+            }else{
+                throw new \Exception(sprintf("El metodo '%s' no ha sido definido", $this->route['method']));
             }
 
-        } catch (\Exception $error) {
+        } catch (\exception $error) {
             echo $error->getMessage();
             die();
         }

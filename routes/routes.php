@@ -2,6 +2,6 @@
 
 return [
     'GET' => [
-        '/' => 'Saloon@index'
+        '/' => 'Bienes@index'
     ]
 ];
