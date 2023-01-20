@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <?php require_once './partials/head.php' ?>
+    <?php require '../app/views/partials/head.php' ?>
 </head>
 <body>
-    <?php require_once './partials/header.php' ?>
+    <?php require '../app/views/partials/header.php' ?>
 
     <main>
-        <?php require_once $content ?>
+        <?php require $content ?>
     </main>
 
-    <?php require_once './partials/footer.php' ?>
-    <?php require_once './partials/scripts.php' ?>
+    <?php require '../app/views/partials/footer.php' ?>
+    <?php require '../app/views/partials/scripts.php' ?>
 </body>
 </html>

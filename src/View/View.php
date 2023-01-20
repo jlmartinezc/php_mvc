@@ -16,7 +16,7 @@ class View{
      */
     public static function render(String $view, Array $params = []):Void{
         try {
-            $config = include_once '../config/app.php';
+            $config = include '../config/app.php';
             $root = $config['path']['root'];
             $template = sprintf('%s/App/Views/template.php', $root);
             $content = sprintf('%s/App/Views/pages/%s.php', $root, $view);
